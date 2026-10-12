@@ -1,0 +1,55 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: jdbc:postgresql://localhost:5433/order_db
+    username: admin
+    password: admin
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        delivery.timeout.ms: 10000
+        request.timeout.ms: 5000
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: org.example.core.dto.*
+      group-id: order-group
+
+order:
+  events:
+    topic:
+      name: order-events-topic
+  command:
+    topic:
+      name: order-command-topic
+
+stock:
+  event:
+    topic:
+      name: stock-event-topic
+  command:
+    topic:
+      name: stock-command-topic
+
+payment:
+  event:
+    topic:
+      name: payment-event-topic
+  command:
+    topic:
+      name: payment-command-topic
+
+

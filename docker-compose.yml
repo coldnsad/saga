@@ -1,0 +1,70 @@
+services:
+  kafka1:
+    image: apache/kafka:3.9.1
+    container_name: kafka-saga-practice
+    ports:
+      - "9092:9092" # Порт для вашего Spring Boot приложения (на хост-компьютере)
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://0.0.0.0:29093'
+      
+      # Маппинг портов: 
+      # 29092 (PLAINTEXT) уходит контейнерам внутри Docker-сети
+      # 9092 (PLAINTEXT_HOST) отдается наружу для вашей IDE/Spring Boot
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka1:29092,PLAINTEXT_HOST://localhost:9092'
+      
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:29093'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      
+      CLUSTER_ID: '4L62YD3VQC6A7U97RE7Q3A'
+      
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka_ui_saga_practice
+    ports:
+      - "8085:8080"
+    environment:
+      DYNAMIC_CONFIG_ENABLED: 'true'
+      KAFKA_CLUSTERS_0_NAME: 'local-kraft-cluster'
+      # Указываем адрес ВНУТРЕННЕГО слушателя Kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 'kafka1:29092'
+    depends_on:
+      - kafka1
+
+  order_db:
+    image: postgres:17
+    container_name: order-db-saga-practice
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: order_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_order_data:/var/lib/postgresql/data
+  stock_db:
+    image: postgres:17
+    container_name: stock-db-saga-practice
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: stock_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_stock_data:/var/lib/postgresql/data
+
+volumes:
+  kafka-data:
+  postgres_stock_data:
+  postgres_order_data:
